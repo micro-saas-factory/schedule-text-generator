@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>面接・商談 日程調整テキスト＆メール一発生成ツール | 完全無料Micro SaaS</title>
+  <meta name="description" content="面接や商談の候補日時をポチポチ選ぶだけで、曜日自動計算付きの日程調整テキスト＆依頼メール文面を一瞬で生成。完全ローカル処理。">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --border: #334155;
+      --success: #4ade80;
+      --danger: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+    }
+    .container { max-width: 1050px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { font-size: 1.5rem; color: var(--accent); margin-bottom: 6px; }
+    p.subtitle { color: var(--muted); font-size: 0.9rem; }
+
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(74, 222, 128, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 880px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card-title { font-size: 1.05rem; font-weight: bold; margin-bottom: 14px; color: var(--text); display: flex; align-items: center; justify-content: space-between; }
+
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+    input[type="text"], input[type="date"], select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    textarea { resize: vertical; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #0f172a; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: #334155; color: var(--text); }
+    .btn-secondary:hover { background: #475569; }
+    .btn-danger-sm { background: rgba(248, 113, 113, 0.2); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.3); padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; }
+
+    /* 候補日時スロットリスト */
+    .slot-item {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+      background: #0f172a;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    @media (max-width: 500px) {
+      .slot-item { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* 生成テキストプレビュー */
+    .output-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      white-space: pre-wrap;
+      word-break: break-all;
+      min-height: 220px;
+      max-height: 380px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+
+    /* 相互リンク & ナビゲーション */
+    .cross-promo {
+      margin-top: 30px;
+      padding: 20px;
+      background: #1e293b;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .promo-title { font-size: 1rem; font-weight: bold; margin-bottom: 12px; color: var(--accent); text-align: center; }
+    .tool-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .tool-chip {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: block;
+      transition: all 0.2s;
+    }
+    .tool-chip:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .tool-chip span { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+    .external-banner {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .ext-link {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+    }
+    .ext-link:hover { color: var(--text); border-color: var(--muted); }
+
+    footer { text-align: center; margin-top: 30px; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>📅 面接・商談 日程調整テキスト＆メール一括生成</h1>
+    <p class="subtitle">候補日時をポチポチ選ぶだけで、曜日自動計算付きの調整文面＆メールを一瞬で作成</p>
+  </header>
+
+  <div style="text-align: center;">
+    <div class="privacy-badge">
+      🔒 100% ブラウザ内ローカル処理（相手先名や日時は外部へ一切送信されません）
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- 入力・設定エリア -->
+    <div class="card">
+      <div class="card-title">⚙️ 条件・候補日時の設定</div>
+
+      <div class="form-group">
+        <label>用途 / テンプレートタイプ</label>
+        <select id="templateType" onchange="generateOutput()">
+          <option value="interview_candidate">採用面接（候補者への日程提示）</option>
+          <option value="interview_applicant">面接希望者（企業への候補日程提示）</option>
+          <option value="business">商談・打ち合わせ（顧客への日程提示）</option>
+          <option value="slots_only">候補日時リストのみ（箇条書き）</option>
+        </select>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>相手先（会社名・氏名）</label>
+          <input type="text" id="targetName" value="〇〇株式会社 採用ご担当者様" oninput="generateOutput()">
+        </div>
+        <div class="form-group">
+          <label>自分の名前・署名</label>
+          <input type="text" id="senderName" value="山田 太郎" oninput="generateOutput()">
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>実施形式</label>
+          <select id="meetingMethod" onchange="generateOutput()">
+            <option value="online">オンライン（Google Meet / Zoom等）</option>
+            <option value="offline">対面（貴社オフィス / 当社オフィス）</option>
+            <option value="phone">お電話</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>所要時間</label>
+          <select id="duration" onchange="generateOutput()">
+            <option value="30分〜1時間程度">約30分〜1時間</option>
+            <option value="30分程度">約30分</option>
+            <option value="45分程度">約45分</option>
+            <option value="1時間程度">約1時間</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 候補日時リスト追加 -->
+      <div style="border-top: 1px solid var(--border); padding-top: 14px; margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="font-weight: bold; color: var(--accent); margin: 0;">🗓️ 候補日時スロット</label>
+          <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="addSlot()">＋ 候補枠を追加</button>
+        </div>
+        <div id="slotsContainer">
+          <!-- JSでレンダリング -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 生成結果・出力エリア -->
+    <div class="card">
+      <div class="card-title">
+        <span>📋 生成された調整テキスト</span>
+      </div>
+
+      <div class="output-box" id="outputPreview"></div>
+
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="copyText()">📋 文面をコピー</button>
+        <button class="btn btn-secondary" onclick="launchMailer()">✉️ メーラー / Gmailを起動</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 相互リンク・他ツール紹介モジュール -->
+  <div class="cross-promo">
+    <div class="promo-title">🛠️ その他の無料ローカル完結ツール</div>
+    <div class="tool-links">
+      <a href="https://invoice-pdf-generator.vercel.app/" target="_blank" class="tool-chip">
+        📑 請求書PDF＆メール作成
+        <span>インボイス対応PDF即時保存＆送信用メール自動生成</span>
+      </a>
+      <a href="https://gmail-unreplied-tracker.vercel.app/" target="_blank" class="tool-chip">
+        📬 Gmail未返信トラッカー
+        <span>返信待ちメールを日数カウントで可視化＆検索</span>
+      </a>
+      <a href="https://web-number-extractor.vercel.app/" target="_blank" class="tool-chip">
+        🔢 数字ハイライト＆自動集計
+        <span>文章内の数値を一括抽出・合計・平均・最大最小を算出</span>
+      </a>
+      <a href="https://ogp-preview-tool.vercel.app/" target="_blank" class="tool-chip">
+        📱 SNS OGPリアルタイムプレビュー
+        <span>X・LINE・Facebookのシェア見え方を実寸確認</span>
+      </a>
+      <a href="https://local-diff-checker.vercel.app/" target="_blank" class="tool-chip">
+        📝 テキスト・コード差分比較
+        <span>機密文章やコードの変更箇所を行・単語単位で比較</span>
+      </a>
+      <a href="https://image-gps-cleaner.vercel.app/" target="_blank" class="tool-chip">
+        📷 写真GPS・Exif完全削除
+        <span>位置情報・撮影日時を除去＆画像軽量化</span>
+      </a>
+      <a href="https://secure-password-generator-self.vercel.app/" target="_blank" class="tool-chip">
+        🔐 暗号パスワード生成器
+        <span>Web Crypto APIによる高強度APIキー・パスワード生成</span>
+      </a>
+      <a href="https://freelance-rate-calculator.vercel.app/" target="_blank" class="tool-chip">
+        ⏱️ フリーランス適正時給逆算
+        <span>手取り・税金・経費から請求時給を自動算出</span>
+      </a>
+      <a href="https://saas-profit-simulator.vercel.app/" target="_blank" class="tool-chip">
+        📊 SaaS損益分岐シミュレーター
+        <span>サブスク・買い切りビジネスの12ヶ月収益予測</span>
+      </a>
+      <a href="https://local-csv-cleaner.vercel.app/" target="_blank" class="tool-chip">
+        📑 CSV文字化け修復・整形
+        <span>Shift-JIS/UTF-8の文字化け・重複行を瞬時整形</span>
+      </a>
+    </div>
+
+    <div class="external-banner">
+      <a href="https://note.com/b2b_tools" target="_blank" class="ext-link">📝 note: 業務自動化ノウハウ</a>
+      <a href="https://qiita.com/b2b_tools" target="_blank" class="ext-link">💡 Qiita: 実装技術ログ</a>
+      <a href="https://gumroad.com/products" target="_blank" class="ext-link">⚡️ Gumroad: 業務効率化ツール</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>100% Local Execution / Schedule Coordinator Architecture</p>
+  </footer>
+</div>
+
+<script>
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+  // 初期スロット設定（翌営業日以降で3候補）
+  let slots = [];
+  const baseDate = new Date();
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate() + i);
+    // 土日スキップ
+    if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+    if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+
+    const dateStr = d.toISOString().split('T')[0];
+    const startTime = i === 1 ? '14:00' : (i === 2 ? '10:00' : '16:00');
+    const endTime = i === 1 ? '15:00' : (i === 2 ? '11:00' : '17:00');
+    slots.push({ date: dateStr, start: startTime, end: endTime });
+  }
+
+  function renderSlots() {
+    const container = document.getElementById('slotsContainer');
+    container.innerHTML = slots.map((s, idx) => `
+      <div class="slot-item">
+        <input type="date" value="${s.date}" onchange="updateSlot(${idx}, 'date', this.value)">
+        <input type="text" value="${s.start}" placeholder="開始" oninput="updateSlot(${idx}, 'start', this.value)">
+        <input type="text" value="${s.end}" placeholder="終了" oninput="updateSlot(${idx}, 'end', this.value)">
+        <button class="btn-danger-sm" onclick="removeSlot(${idx})">×</button>
+      </div>
+    `).join('');
+  }
+
+  function addSlot() {
+    const lastDate = slots.length > 0 ? slots[slots.length - 1].date : new Date().toISOString().split('T')[0];
+    slots.push({ date: lastDate, start: '14:00', end: '15:00' });
+    renderSlots();
+    generateOutput();
+  }
+
+  function removeSlot(idx) {
+    if (slots.length > 1) {
+      slots.splice(idx, 1);
+      renderSlots();
+      generateOutput();
+    }
+  }
+
+  function updateSlot(idx, key, val) {
+    slots[idx][key] = val;
+    generateOutput();
+  }
+
+  function formatSlotText() {
+    return slots.map((s, idx) => {
+      if (!s.date) return `${idx + 1}. 日時未設定`;
+      const d = new Date(s.date);
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      const w = weekdays[d.getDay()] || '';
+      return `${idx + 1}. ${m}月${day}日(${w}) ${s.start}〜${s.end}`;
+    }).join('\n');
+  }
+
+  function generateOutput() {
+    const type = document.getElementById('templateType').value;
+    const target = document.getElementById('targetName').value;
+    const sender = document.getElementById('senderName').value;
+    const methodText = document.getElementById('meetingMethod').options[document.getElementById('meetingMethod').selectedIndex].text;
+    const duration = document.getElementById('duration').value;
+    const slotListText = formatSlotText();
+
+    let text = '';
+
+    if (type === 'slots_only') {
+      text = slotListText;
+    } else if (type === 'interview_applicant') {
+      // 候補者側から企業へ送る場合
+      text = 
+`${target}
+
+お世話になっております。${sender} でございます。
+この度は面接の機会をいただき、誠にありがとうございます。
+
+ご提示いただきました面接の日程につきまして、
+私の希望日時を下記の通りご案内申し上げます。
+
+--------------------------------------------------
+【面接希望日時】
+${slotListText}
+
+・実施形式: ${methodText}
+・所要時間: ${duration}
+--------------------------------------------------
+
+上記日程の中で、ご都合のよろしい日時をご指定いただけますと幸いです。
+もし上記日程でのご調整が難しい場合は、再調整いたしますのでお気軽にお申し付けください。
+
+何卒よろしくお願い申し上げます。
+
+--------------------------------------------------
+${sender}
+--------------------------------------------------`;
+    } else if (type === 'interview_candidate') {
+      // 採用担当から候補者へ送る場合
+      text = 
+`${target}
+
+いつも大変お世話になっております。
+採用担当の ${sender} でございます。
+
+書類選考の結果、ぜひ次の面接へお進みいただきたくご連絡差し上げました。
+つきましては、下記日程の中で面接のご都合はいかがでしょうか。
+
+--------------------------------------------------
+【面接候補日時】
+${slotListText}
+
+・実施形式: ${methodText}
+・所要時間: ${duration}
+--------------------------------------------------
+
+上記の中からご都合のよい日時を【第2〜3希望まで】ご返信いただけますと幸いです。
+（※上記で日程が合わない場合は、ご都合の良い日程を数日お知らせください）
+
+それでは、ご返信を心よりお待ちしております。
+何卒よろしくお願い申し上げます。
+
+--------------------------------------------------
+${sender}
+--------------------------------------------------`;
+    } else {
+      // 商談・打ち合わせ
+      text = 
+`${target}
+
+いつも大変お世話になっております。
+${sender} でございます。
+
+お打ち合わせの日程調整につきまして、
+当方の候補日程を下記の通りご案内申し上げます。
+
+--------------------------------------------------
+【候補日時】
+${slotListText}
+
+・実施形式: ${methodText}
+・所要時間: ${duration}
+--------------------------------------------------
+
+上記日程の中で、ご都合のよろしい時間帯がございましたらお知らせいただけますと幸いです。
+何卒よろしくお願い申し上げます。
+
+--------------------------------------------------
+${sender}
+--------------------------------------------------`;
+    }
+
+    document.getElementById('outputPreview').innerText = text;
+  }
+
+  function copyText() {
+    const text = document.getElementById('outputPreview').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('文面をクリップボードにコピーしました！');
+    });
+  }
+
+  function launchMailer() {
+    const subject = encodeURIComponent('【日程調整のお願い】候補日時のご案内');
+    const body = encodeURIComponent(document.getElementById('outputPreview').innerText);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
+
+  // 初期化
+  renderSlots();
+  generateOutput();
+</script>
+
+</body>
+</html>
