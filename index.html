@@ -77,7 +77,6 @@
     textarea { resize: vertical; }
 
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
     .btn {
       padding: 8px 14px;
@@ -260,7 +259,8 @@
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <button class="btn btn-primary" onclick="copyText()">📋 文面をコピー</button>
-        <button class="btn btn-secondary" onclick="launchMailer()">✉️ メーラー / Gmailを起動</button>
+        <button class="btn btn-secondary" onclick="openWebGmail()">🚀 Gmail(Web)で作成</button>
+        <button class="btn btn-secondary" onclick="launchMailer()">✉️ メールアプリ起動</button>
       </div>
     </div>
   </div>
@@ -332,7 +332,6 @@
   for (let i = 1; i <= 3; i++) {
     const d = new Date(baseDate);
     d.setDate(baseDate.getDate() + i);
-    // 土日スキップ
     if (d.getDay() === 6) d.setDate(d.getDate() + 2);
     if (d.getDay() === 0) d.setDate(d.getDate() + 1);
 
@@ -398,7 +397,6 @@
     if (type === 'slots_only') {
       text = slotListText;
     } else if (type === 'interview_applicant') {
-      // 候補者側から企業へ送る場合
       text = 
 `${target}
 
@@ -425,7 +423,6 @@ ${slotListText}
 ${sender}
 --------------------------------------------------`;
     } else if (type === 'interview_candidate') {
-      // 採用担当から候補者へ送る場合
       text = 
 `${target}
 
@@ -453,7 +450,6 @@ ${slotListText}
 ${sender}
 --------------------------------------------------`;
     } else {
-      // 商談・打ち合わせ
       text = 
 `${target}
 
@@ -489,9 +485,28 @@ ${sender}
     });
   }
 
-  function launchMailer() {
+  // Web版Gmailをブラウザで開く
+  function openWebGmail() {
+    const text = document.getElementById('outputPreview').innerText;
     const subject = encodeURIComponent('【日程調整のお願い】候補日時のご案内');
-    const body = encodeURIComponent(document.getElementById('outputPreview').innerText);
+    const body = encodeURIComponent(text);
+
+    // クリップボードにもコピー
+    navigator.clipboard.writeText(text);
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&su=${subject}&body=${body}`;
+    window.open(gmailUrl, '_blank');
+  }
+
+  // OS標準メールソフトを起動
+  function launchMailer() {
+    const text = document.getElementById('outputPreview').innerText;
+    const subject = encodeURIComponent('【日程調整のお願い】候補日時のご案内');
+    const body = encodeURIComponent(text);
+
+    // クリップボードにもコピー
+    navigator.clipboard.writeText(text);
+
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }
 
